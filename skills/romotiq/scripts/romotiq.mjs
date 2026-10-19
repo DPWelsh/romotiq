@@ -13,7 +13,8 @@
      render <reel> [--draft]                  → out/reel.mp4
      check <reel>                             the final render's cuts, flashes, clipped words, safe zone, loudness
      telemetry [on|off]                       the anonymous usage ping (counts only, never names, paths or clips)
-     addons [list | activate <key> | install <id|all>]    paid packs, bought once at romotiq.xyz
+     addons [list | buy <id> | wait | activate <key> | install <id|all>]
+                                              paid packs, bought once: buy opens checkout, waits, then installs
 
    Romotiq is free. */
 import fs from "node:fs";
@@ -40,7 +41,7 @@ const log = m => process.stderr.write(`[romotiq] ${m}\n`);
 const done = v => { process.stdout.write(JSON.stringify(v) + "\n"); };
 const version = readJson(fileURLToPath(new URL("../../../.claude-plugin/plugin.json", import.meta.url)), {}).version || "0.0.0";
 const tel = telemetry({ home: HOME, version });
-const packs = addons({ home: HOME, version });
+const packs = addons({ home: HOME, version, log });
 const reelDir = () => { if (!args[0]) throw new Error(`usage: romotiq ${cmd} <reel folder> …`); return path.resolve(args[0]); };
 
 async function doctor() {
@@ -72,6 +73,8 @@ async function doctor() {
 const commands = {
   doctor,
   async addons() {
+    if (args[0] === "buy") return packs.buy(args[1], { wait: !flags["no-wait"], open: !flags["no-open"] });
+    if (args[0] === "wait") return packs.wait();
     if (args[0] === "activate") return packs.activate(args[1]);
     if (args[0] === "install") return packs.install(args[1] || "all");
     return { ...(await packs.list()), installedHere: packs.installed() };
