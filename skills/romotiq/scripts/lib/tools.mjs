@@ -35,10 +35,11 @@ function fetched(name) {
   } catch { return null; }
 }
 const homebrew = name => ["/opt/homebrew/bin/" + name, "/usr/local/bin/" + name].find(f => fs.existsSync(f)) || null;
-const find = (env, name) => process.env[env] || which(name) || (WIN ? null : homebrew(name)) || fetched(name);
+/* an override path (named in full, so it's plain which variables are read), then PATH, Homebrew, or the fetched copy */
+const find = (override, name) => override || which(name) || (WIN ? null : homebrew(name)) || fetched(name);
 
-export const ffmpegBin = () => find("ROMOTIQ_FFMPEG", "ffmpeg") || "ffmpeg";
-export const ffprobeBin = () => find("ROMOTIQ_FFPROBE", "ffprobe") || "ffprobe";
+export const ffmpegBin = () => find(process.env.ROMOTIQ_FFMPEG, "ffmpeg") || "ffmpeg";
+export const ffprobeBin = () => find(process.env.ROMOTIQ_FFPROBE, "ffprobe") || "ffprobe";
 
 export function toolEnv(extra = {}) {
   const dirs = [ffmpegBin(), ffprobeBin()].filter(p => path.isAbsolute(p)).map(p => path.dirname(p));
