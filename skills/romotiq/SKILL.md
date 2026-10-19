@@ -15,7 +15,8 @@ node "$RQ" doctor            # first time on a machine; `doctor --fix` fetches f
 ```
 
 Every command prints progress on stderr and one JSON line on stdout. Run long steps (cutout, render) in the
-background.
+background. To look at frames yourself, use the `ffmpeg` and `ffprobe` paths that `doctor` prints: they may not be on
+the PATH.
 
 ## Before the first reel
 
@@ -52,7 +53,7 @@ or `~/Videos/Romotiq/<date> <title>` on Windows.
 | 1 | Ingest | `new <reel> <clip> [<clip>…]` | Clips in the order they were shot |
 | 2 | Best take | `takes <reel>` prints the lines, the retakes, the false starts and the stumbles, and drafts `edit.json` | **Read the lines.** Keep the best whole take of each line, usually the last. Edit `edit.json` (`remove: [{start, end, why}]` on the recording's time) when the draft is wrong. Add `"hold": 0.8` when the ending needs time to finish. The sound is levelled to -14 LUFS (`"loudness": null` keeps it as recorded) |
 | 3 | Cut | `cut <reel>` → `comp/take.mp4`, `words.json`, `cuts.json` | — |
-| 4 | Cut-out | `cutout <reel>` → `comp/fg.webm`, `subject.json` | Apple Vision on a Mac, macOS 12 or newer (about 3× the take's length); elsewhere HyperFrames (~40 s per second, so tell them) |
+| 4 | Cut-out | `cutout <reel>` → `comp/fg.webm`, and `subject.json` in the reel folder (the person's box across five frames; `head_top` is the highest the head gets) | Apple Vision on a Mac, macOS 12 or newer (about 3× the take's length); elsewhere HyperFrames (~40 s per second, so tell them) |
 | 5 | Beat sheet | write `<reel>/beats.md` | **One row per beat. Show it to them and get a go before placing effects** (below) |
 | 6 | Effects | `effects <reel> --init`, then edit `effects.json` | Punch-ins and captions are written for you. Add one effect per beat, on a word |
 | 7 | Build | `build <reel>` → `comp/index.html` and lint | 0 errors. Two warnings are expected (`duplicate_media_discovery_risk` with doodle boil, and file size) |
@@ -103,7 +104,7 @@ or `~/Videos/Romotiq/<date> <title>` on Windows.
 | Effect | What it does | Needs the cut-out |
 |---|---|---|
 | `00-punch-ins` | The scale alternates at the cuts, so a jump cut reads as a camera change (`--init`) | — |
-| `00-captions` | Word by word, 1–3 words a chunk, each word blurring in | — |
+| `00-captions` | Word by word, 1–3 words a chunk, each word blurring in. Lower-case by default; `LOWER: false` keeps their casing | — |
 | `00-title` | A 3–8-word promise on frame 0 | — |
 | `00-label-pill` | Names the section or step, top centre | — |
 | `00-room-dim` | Darkens the room, not the person | yes |

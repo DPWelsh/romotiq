@@ -53,6 +53,7 @@ async function doctor() {
     } else { out.ok = false; out.notes.push("No ffmpeg: run `romotiq doctor --fix` to fetch one."); }
   }
   out.ffmpeg = ffmpegBin();
+  out.ffprobe = ffprobeBin();
   try { out.vp9 = /libvpx-vp9/.test(execFileSync(ffmpegBin(), ["-hide_banner", "-encoders"], { encoding: "utf8" })); } catch { out.vp9 = false; }
   if (!out.vp9) { out.ok = false; out.notes.push("This ffmpeg can't write VP9 with alpha (libvpx-vp9), which the cut-out needs."); }
   try { out.chrome = (await hf(["browser", flags.fix ? "ensure" : "path"])).trim().split("\n").pop(); }

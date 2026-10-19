@@ -87,17 +87,28 @@ export async function cutOut(dir, { engine = "auto", quality, log = () => {} } =
 }
 
 /* the person's box on the middle frame, from the cut-out's alpha, at a tenth of the size */
+/* where the person is: their box across five frames (15–85% in), at a tenth of the size, so a head that moves or
+   rises during the take still counts. head_top is the highest the head gets (the fresh-user test of 19 Oct found a
+   single middle frame read 480 for a cap that reached 370); head_cx is the median of the frames' head centres. */
 export async function subject(dir) {
-  const fg = path.join(dir, "comp", "fg.webm"), mid = (duration(fg) / 2).toFixed(2);
-  const w = W / 10, h = H / 10;
-  const raw = await run(ffmpegBin(), ["-v", "error", "-c:v", "libvpx-vp9", "-ss", mid, "-i", fg, "-frames:v", "1", "-vf", `alphaextract,scale=${w}:${h}`, "-f", "rawvideo", "-pix_fmt", "gray", "-"], { what: "reading the cut-out", binary: true });
-  const pts = [];
-  for (let i = 0; i < raw.length; i++) if (raw[i] > 128) pts.push([i % w, Math.floor(i / w)]);
-  if (!pts.length) throw new Error("the cut-out found no person on the middle frame");
-  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-  const box = { x0: Math.min(...xs) * 10, x1: (Math.max(...xs) + 1) * 10, y0: Math.min(...ys) * 10, y1: (Math.max(...ys) + 1) * 10 };
-  const top = pts.filter(p => p[1] <= box.y0 / 10 + 6).map(p => p[0]);
-  const s = { ...box, head_cx: Math.round(top.reduce((a, b) => a + b, 0) / top.length * 10), head_top: box.y0 };
+  const fg = path.join(dir, "comp", "fg.webm"), len = duration(fg);
+  const w = W / 10, h = H / 10, frames = [];
+  for (const at of [0.15, 0.35, 0.5, 0.65, 0.85]) {
+    const raw = await run(ffmpegBin(), ["-v", "error", "-c:v", "libvpx-vp9", "-ss", (len * at).toFixed(2), "-i", fg, "-frames:v", "1",
+      "-vf", `alphaextract,scale=${w}:${h}`, "-f", "rawvideo", "-pix_fmt", "gray", "-"], { what: "reading the cut-out", binary: true });
+    const pts = [];
+    for (let i = 0; i < raw.length; i++) if (raw[i] > 128) pts.push([i % w, Math.floor(i / w)]);
+    if (!pts.length) continue;
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), y0 = Math.min(...ys);
+    const top = pts.filter(p => p[1] <= y0 + 6).map(p => p[0]);
+    frames.push({ x0: Math.min(...xs) * 10, x1: (Math.max(...xs) + 1) * 10, y0: y0 * 10, y1: (Math.max(...ys) + 1) * 10,
+      cx: Math.round(top.reduce((a, b) => a + b, 0) / top.length * 10) });
+  }
+  if (!frames.length) throw new Error("the cut-out found no person");
+  const median = v => [...v].sort((a, b) => a - b)[Math.floor(v.length / 2)];
+  const s = { x0: Math.min(...frames.map(f => f.x0)), x1: Math.max(...frames.map(f => f.x1)), y0: Math.min(...frames.map(f => f.y0)),
+    y1: Math.max(...frames.map(f => f.y1)), head_cx: median(frames.map(f => f.cx)), head_top: Math.min(...frames.map(f => f.y0)),
+    head_top_range: [Math.min(...frames.map(f => f.y0)), Math.max(...frames.map(f => f.y0))], frames: frames.length };
   writeJson(path.join(dir, "subject.json"), s);
   return s;
 }
