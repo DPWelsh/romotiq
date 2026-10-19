@@ -1,7 +1,21 @@
 {
   "name": "romotiq",
-  "version": "0.3.2",
+  "displayName": "Romotiq",
+  "version": "0.3.3",
   "description": "Edit talking-head reels end to end: best take of each line, dead air out, punch-ins, a person cut-out, captions and effects in your brand, and a render checked frame by frame.",
-  "author": { "name": "Romotiq", "email": "daniel@romotion.xyz", "url": "https://romotiq.xyz" },
-  "homepage": "https://romotiq.xyz"
+  "author": {
+    "name": "Romotiq",
+    "email": "daniel@romotion.xyz",
+    "url": "https://romotiq.xyz"
+  },
+  "homepage": "https://romotiq.xyz",
+  "repository": "https://github.com/DPWelsh/romotiq",
+  "license": "PolyForm-Shield-1.0.0",
+  "keywords": [
+    "video",
+    "reels",
+    "editing",
+    "captions",
+    "ffmpeg"
+  ]
 }
