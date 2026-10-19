@@ -12,12 +12,15 @@
      snapshot <reel> --at 1.2,3.4             frames of the page as it will render → out/snapshots/
      render <reel> [--draft]                  → out/reel.mp4
      check <reel>                             the final render's cuts, flashes, clipped words, safe zone, loudness
+     telemetry [on|off]                       the anonymous usage ping (counts only, never names, paths or clips)
 
    Romotiq is free. */
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ffmpegBin, ffprobeBin, hf, npm, TOOLS, HOME, HYPERFRAMES } from "./lib/tools.mjs";
+import { fileURLToPath } from "node:url";
+import { ffmpegBin, ffprobeBin, hf, npm, TOOLS, HOME, HYPERFRAMES, duration, readJson } from "./lib/tools.mjs";
+import { telemetry } from "./lib/telemetry.mjs";
 import { newReel, cutTake } from "./lib/ingest.mjs";
 import { draftEdit } from "./lib/takes.mjs";
 import { cutOut, subject, visionBin } from "./lib/matte.mjs";
@@ -33,6 +36,8 @@ for (let i = 0; i < rest.length; i++) {
 }
 const log = m => process.stderr.write(`[romotiq] ${m}\n`);
 const done = v => { process.stdout.write(JSON.stringify(v) + "\n"); };
+const version = readJson(fileURLToPath(new URL("../../../.claude-plugin/plugin.json", import.meta.url)), {}).version || "0.0.0";
+const tel = telemetry({ home: HOME, version });
 const reelDir = () => { if (!args[0]) throw new Error(`usage: romotiq ${cmd} <reel folder> …`); return path.resolve(args[0]); };
 
 async function doctor() {
@@ -55,12 +60,18 @@ async function doctor() {
   try { out.cutout = visionBin() ? "Apple Vision (about 3× the take's length)" : "HyperFrames remove-background (CPU, ~40 s per second of video)"; }
   catch (e) { out.cutout = "HyperFrames remove-background"; out.notes.push(`Vision cut-out didn't build: ${e.message.split("\n")[0]}`); }
   out.home = HOME;
+  out.telemetry = tel.status().telemetry;
   out.hyperframes = HYPERFRAMES;
   return out;
 }
 
 const commands = {
   doctor,
+  async telemetry() {
+    if (args[0] === "off") return tel.set(false);
+    if (args[0] === "on") return tel.set(true);
+    return tel.status();
+  },
   async new() {
     const dir = reelDir(), clips = args.slice(1).map(c => path.resolve(c));
     if (!clips.length) throw new Error("usage: romotiq new <reel folder> <clip> [<clip> …]");
@@ -101,7 +112,7 @@ const commands = {
     let last = 0;
     await hf(["render", "-o", out, "--fps", "30", "--quality", flags.draft ? "draft" : "looks"], { cwd: path.join(dir, "comp"),
       line: l => { const m = /(\d{1,3})%/.exec(l); if (m && +m[1] >= last + 10) { last = +m[1]; log(`render ${m[1]}%`); } } });
-    return { file: out, seconds: Math.round((Date.now() - t0) / 1000) };
+    return { file: out, seconds: Math.round((Date.now() - t0) / 1000), length: Math.round(duration(out) * 10) / 10 };
   },
   async check() {
     const r = await check(reelDir(), { log });
@@ -114,5 +125,16 @@ if (!commands[cmd]) {
   process.stderr.write(fs.readFileSync(new URL(import.meta.url), "utf8").split("*/")[0].replace(/^#!.*\n\/\* ?/, "") + "\n");
   process.exit(cmd ? 2 : 0);
 }
-try { done(await commands[cmd]()); }
-catch (e) { log(e.message); done({ error: e.message, ...(e.code ? { code: e.code } : {}) }); process.exit(1); }
+/* the anonymous ping (lib/telemetry.mjs) rides along: counts and timings only, and it never fails a command */
+try {
+  if (cmd !== "telemetry" && tel.firstRun()) await tel.send("first_run");
+  const result = await commands[cmd]();
+  if (cmd === "new") await tel.send("reel_started", { clips: args.length - 1, recording_s: Math.round(result.seconds) });
+  if (cmd === "render") await tel.send("reel_rendered", { render_s: result.seconds, reel_s: result.length, draft: !!flags.draft });
+  if (cmd === "check") await tel.send("reel_checked", { problems: result.problems.length, lufs: Math.round(result.loudness?.lufs ?? 0) });
+  done(result);
+}
+catch (e) {
+  await tel.send("step_failed", { step: cmd });
+  log(e.message); done({ error: e.message, ...(e.code ? { code: e.code } : {}) }); process.exit(1);
+}

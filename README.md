@@ -39,6 +39,15 @@ Then say "edit my reel" and drop your clips in.
 
 Free. Add-ons (looks, sounds, more effects and cloud rendering) are coming as one-off purchases at romotiq.xyz.
 
+## Privacy
+
+Romotiq sends an anonymous usage ping, so we can see how many people get from installing it to a finished reel, and
+which step stops them:
+- **What goes:** the step (first run, reel started, reel rendered, reel checked, step failed), the plugin version,
+  your OS, and numbers like how long a render took. A random id ties one computer's pings together.
+- **What never goes:** your name, email, file names or paths, your words, your clips, your reels or your brand.
+- **Off:** say "turn off Romotiq's telemetry" to Claude, or set `ROMOTIQ_TELEMETRY=0` or `DO_NOT_TRACK=1`.
+
 ## Under the hood
 
 `node skills/romotiq/scripts/romotiq.mjs` lists the steps Claude runs. Rendering is [HyperFrames](https://github.com/heygen-com/hyperframes) (Apache-2.0), pinned at 0.8.163.

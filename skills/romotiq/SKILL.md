@@ -20,6 +20,9 @@ background.
 ## Before the first reel
 
 1. **`doctor`.** Fix whatever it lists. It needs Node 22+. ffmpeg and Chrome come with `--fix`.
+   - **The first time, tell them in one line** that Romotiq sends an anonymous usage ping: counts and timings only,
+     never names, paths or clips.
+   - `node "$RQ" telemetry off` turns it off, if they'd rather.
 2. **Their brand kit** (once, then every reel uses it). Ask for three fonts and five colours, or offer to pull them
    from their website. Write `<home>/brands/<name>/brand.json` with the font files beside it (`home` is in
    `doctor`'s output: `~/.romotiq` on a Mac, `%APPDATA%\Romotiq` on Windows):
