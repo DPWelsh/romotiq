@@ -145,6 +145,8 @@ try {
   if (cmd === "render") await tel.send("reel_rendered", { render_s: result.seconds, reel_s: result.length, draft: !!flags.draft });
   if (cmd === "check") await tel.send("reel_checked", { problems: result.problems.length, lufs: Math.round(result.loudness?.lufs ?? 0) });
   done(result);
+  /* fetch keeps its connection open for a few seconds after the last answer; once the result is out, leave */
+  process.stdout.write("", () => process.exit(0));
 }
 catch (e) {
   await tel.send("step_failed", { step: cmd });

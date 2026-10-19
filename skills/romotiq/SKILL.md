@@ -142,7 +142,10 @@ cloud rendering are coming.
 - **Don't sell.** Mention add-ons only when they ask, or when a pack they own has the effect they're asking for.
 - **`addons`** lists them, with prices, buy links, what this computer owns and what's installed.
 - **Buying from here.** When they ask to buy a pack, run `addons buy <id>` with a 10-minute timeout.
-  - It opens Stripe's checkout in their browser and waits. Tell them to pay there; Apple Pay or Link works.
+  - It opens Stripe's checkout in their browser and waits. Tell them to pay in that tab; Apple Pay or Link works.
+  - **Only that tab finishes the install by itself:** its link carries this computer's one-time secret. Never offer the
+    plain buy link from `addons` as a fallback. If no tab opened, `buy` prints a `checkout` link that carries the
+    secret; give them that one.
   - Once it's paid, it activates this computer and installs the pack by itself.
   - If it stops waiting before they've paid, run `addons wait` when they say it's done.
   - **Card details go only into Stripe's page.** Never ask for them, type them or handle them.
