@@ -6,7 +6,8 @@
      initEffects(dir)             a starting effects.json: punch-ins and captions; Claude adds the beats' effects
      assemble(dir)                comp/index.html (and comp/assets/ for the fonts)
    effects.json { duration?, effects: [{ use, params }] }. "@words.json" (or any "@<file>.json") is read from the reel.
-   An effect is looked for first in the reel's own effects/ folder (one built for this reel), then the library. */
+   An effect is looked for first in the reel's own effects/ folder (one built for this reel), then in installed add-on
+   packs (packDirs), then the library. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -50,7 +51,7 @@ export function initEffects(dir, { force = false } = {}) {
   return { effects: effects.length, punches: effects[0].params.STEPS.length, close };
 }
 
-export async function assemble(dir) {
+export async function assemble(dir, { packDirs = [] } = {}) {
   const spec = readJson(path.join(dir, "effects.json")), comp = path.join(dir, "comp");
   const total = spec.duration || readJson(path.join(dir, "cuts.json")).duration;
   const brand = await loadBrand(dir);
@@ -65,9 +66,9 @@ export async function assemble(dir) {
     if (fx.skip) continue;
     if (seen.has(fx.use)) throw new Error(`${fx.use} is used twice: its ids would collide (one use per effect per reel)`);
     seen.add(fx.use);
-    const own = path.join(dir, "effects", `${fx.use}.html`), lib = path.join(LIBRARY, `${fx.use}.html`);
-    const file = fs.existsSync(own) ? own : lib;
-    if (!fs.existsSync(file)) throw new Error(`there's no effect called ${fx.use} (looked in ${path.join(dir, "effects")} and the library)`);
+    const where = [path.join(dir, "effects"), ...packDirs, LIBRARY];
+    const file = where.map(d => path.join(d, `${fx.use}.html`)).find(f => fs.existsSync(f));
+    if (!file) throw new Error(`there's no effect called ${fx.use} (looked in the reel's effects/, ${packDirs.length} installed pack${packDirs.length === 1 ? "" : "s"} and the library)`);
     /* the header comment first: it may mention "<style>" in its prose */
     const src = fs.readFileSync(file, "utf8").replace(/<!--[\s\S]*?-->/g, "");
     const style = src.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";

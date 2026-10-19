@@ -13,6 +13,7 @@
      render <reel> [--draft]                  → out/reel.mp4
      check <reel>                             the final render's cuts, flashes, clipped words, safe zone, loudness
      telemetry [on|off]                       the anonymous usage ping (counts only, never names, paths or clips)
+     addons [list | activate <key> | install <id|all>]    paid packs, bought once at romotiq.xyz
 
    Romotiq is free. */
 import fs from "node:fs";
@@ -21,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ffmpegBin, ffprobeBin, hf, npm, TOOLS, HOME, HYPERFRAMES, duration, readJson } from "./lib/tools.mjs";
 import { telemetry } from "./lib/telemetry.mjs";
+import { addons } from "./lib/addons.mjs";
 import { newReel, cutTake } from "./lib/ingest.mjs";
 import { draftEdit } from "./lib/takes.mjs";
 import { cutOut, subject, visionBin } from "./lib/matte.mjs";
@@ -38,6 +40,7 @@ const log = m => process.stderr.write(`[romotiq] ${m}\n`);
 const done = v => { process.stdout.write(JSON.stringify(v) + "\n"); };
 const version = readJson(fileURLToPath(new URL("../../../.claude-plugin/plugin.json", import.meta.url)), {}).version || "0.0.0";
 const tel = telemetry({ home: HOME, version });
+const packs = addons({ home: HOME, version });
 const reelDir = () => { if (!args[0]) throw new Error(`usage: romotiq ${cmd} <reel folder> …`); return path.resolve(args[0]); };
 
 async function doctor() {
@@ -68,6 +71,11 @@ async function doctor() {
 
 const commands = {
   doctor,
+  async addons() {
+    if (args[0] === "activate") return packs.activate(args[1]);
+    if (args[0] === "install") return packs.install(args[1] || "all");
+    return { ...(await packs.list()), installedHere: packs.installed() };
+  },
   async telemetry() {
     if (args[0] === "off") return tel.set(false);
     if (args[0] === "on") return tel.set(true);
@@ -93,7 +101,7 @@ const commands = {
     return initEffects(reelDir(), { force: !!flags.force });
   },
   async build() {
-    const dir = reelDir(), r = await assemble(dir);
+    const dir = reelDir(), r = await assemble(dir, { packDirs: packs.effectDirs() });
     let lint = "";
     try { lint = await hf(["lint"], { cwd: path.join(dir, "comp") }); } catch (e) { return { ...r, lint: "failed", error: e.message }; }
     const errors = Number((/(\d+)\s+error/.exec(lint) || [])[1] || 0);

@@ -134,3 +134,16 @@ there before the library.
 
 **A problem means fix and render again.** A note means look and decide. In `cuts.jpg`, each row is one cut: two
 frames before it, two after.
+
+## Add-ons
+
+Romotiq is free. Add-on packs are bought once each at romotiq.xyz. The Pro effects pack is on sale; looks, sound and
+cloud rendering are coming.
+- **Don't sell.** Mention add-ons only when they ask, or when a pack they own has the effect they're asking for.
+- **`addons`** lists them, with prices, buy links, what this computer owns and what's installed.
+- **Activate once.** When they paste the key from their purchase (shown after paying, and emailed), run
+  `addons activate <key>`. **Never type a key they haven't given you in this chat.**
+- **Install.** `addons install all` (or one pack's id) downloads what they own. `build` then finds a pack's effects
+  after the reel's own and before the library: use them in `effects.json` by name, like any other. A pack's README
+  (`<home>/addons/<id>/README.md`) says what each effect is for; each effect's parameters are in its header comment.
+- **Not open yet?** If it says add-ons aren't open, tell them they're coming, and carry on with the free edit.
