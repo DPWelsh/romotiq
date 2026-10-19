@@ -17,7 +17,10 @@ const KEY = "phc_da1r8FmgU0mnVEcxWT50T7VR3TntddHrOcXiGdft3Z4";   // PostHog's pu
 const URL_ = "https://us.i.posthog.com/i/v0/e/";
 const EVENTS = new Set(["first_run", "reel_started", "reel_rendered", "reel_checked", "step_failed"]);
 
-export function telemetry({ home, version = "0.0.0", fetcher = globalThis.fetch, env = process.env } = {}) {
+/* only the two switches are read from the environment; nothing else in it is looked at or sent */
+const SWITCHES = () => ({ ROMOTIQ_TELEMETRY: process.env.ROMOTIQ_TELEMETRY, DO_NOT_TRACK: process.env.DO_NOT_TRACK });
+
+export function telemetry({ home, version = "0.0.0", fetcher = globalThis.fetch, env = SWITCHES() } = {}) {
   const idFile = path.join(home, "id"), configFile = path.join(home, "config.json");
   const config = () => { try { return JSON.parse(fs.readFileSync(configFile, "utf8")); } catch { return {}; } };
   const off = () => env.ROMOTIQ_TELEMETRY === "0" || env.DO_NOT_TRACK === "1" || config().telemetry === false;
