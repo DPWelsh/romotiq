@@ -1,0 +1,29 @@
+<!-- 00 · frame-0 title — a 3–8-word promise, up from the very first frame, top band.
+     Measured: a title on frame 0 in 10 of 12 reference reels, median 6.5 words, y 15–22%, static until the
+     first effect needs the space, then gone.
+     Theme: display-900, light ink with the caption halo, tracked −0.045em, max 2 lines. ✅ rendered 16 Oct 2026.
+     Params: TEXT, UNTIL (s; hard cut off, or fades 0.12 s when FADE), TOP (px, 230–420 band),
+     SIZE (px), FADE (bool). -->
+
+<style>
+  #title0 {
+    position: absolute; left: 70px; right: 70px; top: 250px; z-index: 22;
+    font-family: var(--display); font-weight: 900; letter-spacing: -0.045em; line-height: 0.95;
+    text-align: center; color: var(--cloud); text-wrap: balance;   /* no orphan last word */
+    text-shadow: 0 0 2px rgba(26, 28, 18, 0.9), 0 0 8px rgba(26, 28, 18, 0.6), 0 3px 18px rgba(26, 28, 18, 0.5);
+  }
+</style>
+
+<div id="title0" class="hud"></div>
+
+<script>
+  (function frameZeroTitle({ TEXT = "", UNTIL = 2.5, TOP = 250, SIZE = 92, FADE = false } = {}) {
+    const el = document.getElementById("title0");
+    el.textContent = TEXT;
+    el.style.top = TOP + "px";
+    el.style.fontSize = SIZE + "px";
+    gsap.set(el, { opacity: 1 });                       // on at frame 0: no entrance
+    if (FADE) tl.to(el, { opacity: 0, duration: 0.12, ease: "power2.in" }, UNTIL - 0.12);
+    else tl.set(el, { opacity: 0 }, UNTIL);
+  })();
+</script>

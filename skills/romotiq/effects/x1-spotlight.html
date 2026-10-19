@@ -1,0 +1,27 @@
+<!-- x1 · spotlight — "kill the lights": the whole frame (the person included) drops to a soft
+     elliptical pool on the face in 5 frames, holds, then HARD-cuts back.
+     Measured on reference reels: elliptical multiply with a navy shadow tint + black floor; no matte; captions
+     and pill stay bright (they're in the hud layer above). ✅ rendered 16 Oct 2026.
+     Params: T (on the trigger word), HOLD, CX/CY (face centre px), RX/RY (pool size px). -->
+
+<style>
+  #spot {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy),
+        rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 35%, rgba(12, 16, 38, 0.72) 75%, rgba(6, 8, 18, 0.93) 100%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.6) 100%);
+  }
+</style>
+
+<div id="spot" class="front"></div>
+
+<script>
+  (function spotlight({ T = 1, HOLD = 1.85, CX = 540, CY = 900, RX = 520, RY = 760 } = {}) {
+    const el = document.getElementById("spot");
+    el.style.setProperty("--cx", CX + "px"); el.style.setProperty("--cy", CY + "px");
+    el.style.setProperty("--rx", RX + "px"); el.style.setProperty("--ry", RY + "px");
+    tl.to(el, { opacity: 1, duration: 5 / 30, ease: "power2.out" }, T);
+    tl.set(el, { opacity: 0 }, T + 5 / 30 + HOLD);         // hard cut back, no fade
+  })();
+</script>

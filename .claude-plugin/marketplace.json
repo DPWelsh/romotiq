@@ -1,0 +1,13 @@
+{
+  "name": "romotiq",
+  "owner": { "name": "Romotiq", "email": "daniel@romotion.xyz", "url": "https://romotiq.xyz" },
+  "description": "Romotiq for Claude Code: Claude edits your talking-head reels end to end, in your own brand.",
+  "plugins": [
+    {
+      "name": "romotiq",
+      "source": "./",
+      "description": "Edit talking-head reels end to end: best take of each line, dead air out, punch-ins, a person cut-out, captions and effects in your brand, and a render checked frame by frame.",
+      "homepage": "https://romotiq.xyz"
+    }
+  ]
+}

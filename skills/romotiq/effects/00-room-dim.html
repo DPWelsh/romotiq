@@ -1,0 +1,20 @@
+<!-- 00 · room dim — darken the room, not the person. A Core rectangle UNDER the cut-out.
+     Measured on reference reels under headline wall, chart grow, freeze-and-label, doodle boil:
+     background 45–56% darker, face untouched. It's the cheapest "produced" look there is.
+     ✅ rendered 16 Oct 2026.
+     Params: WINDOWS [[t_in, t_out, amount]] (default 0.6 ≈ wall luma −40%; 0.5 measured −35%), FADE (s, measured ≈ 0.1–0.17). -->
+
+<style>
+  #room-dim { position: absolute; inset: 0; background: var(--core); opacity: 0; }
+</style>
+
+<div id="room-dim" class="behind"></div>
+
+<script>
+  (function roomDim({ WINDOWS = [], FADE = 0.12 } = {}) {
+    WINDOWS.forEach(([a, b, amt = 0.6]) => {
+      tl.to("#room-dim", { opacity: amt, duration: FADE, ease: "power2.out" }, a);
+      tl.to("#room-dim", { opacity: 0, duration: FADE * 0.6, ease: "power2.in" }, b);
+    });
+  })();
+</script>

@@ -1,0 +1,126 @@
+<!-- x4 · comment CTA — an IG-style comment bar types the keyword, posts it as a bubble that
+     floats up and gets a heart, then a reply card slides in with the link.
+     Measured on reference reels: bar at ~72% height; types at 12 chars/s; post = bar drops 15 px + fades while a bubble
+     rises 255 px (easeOutCubic 0.2 s); heart +0.13 s; typing dots +0.10; reply card +0.20;
+     link pill +0.5. Last 4–12 s of every reel. Measured: spoken + shown keyword reels get
+     20.0 comments per 1k plays vs 1.0 without, across 80 reference reels.
+     Rebuilt in the theme: dark glass bar, theme-ink bubble, accent link pill. No matte.
+     ✅ rendered 16 Oct 2026.
+     RULE: only use it when the keyword's payload page exists, and SAY the keyword out loud.
+     Set captions HIDE over [T, end] — the bubble rises into the caption band.
+     Params: KEYWORD, T (bar in; ~0.1 s before they say "comment"), CPS, T_POST (null = auto:
+     typing end + 0.35 s), REPLY, LINK, NAME, INITIALS, AVATAR (optional image path), Y (bar centre),
+     RISE (px the bubble floats up). The reference framing: Y 1382, RISE 255. On a CLOSE take (chin ≈ 1170)
+     that lands the bubble on the mouth: use Y 1420, RISE 185 so the bubble tops out under the chin. -->
+
+<style>
+  #cta { position: absolute; left: 0; right: 0; top: 0; z-index: 23; font-family: var(--display); }
+  #cta .bar {
+    position: absolute; left: 110px; right: 110px; height: 112px; border-radius: 56px;
+    display: flex; align-items: center; gap: 22px; padding: 0 22px 0 30px;
+    background: rgba(26, 28, 18, 0.82); border: 2px solid rgba(237, 237, 235, 0.16);
+    backdrop-filter: blur(12px); opacity: 0;
+  }
+  #cta .av {
+    width: 64px; height: 64px; border-radius: 50%; flex: none; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--indigo); color: var(--cloud); font-family: var(--mono); font-weight: 700; font-size: 24px;
+  }
+  #cta .av img { width: 100%; height: 100%; object-fit: cover; }
+  #cta .field { flex: 1; font-size: 40px; font-weight: 700; color: rgba(237, 237, 235, 0.45); white-space: nowrap; overflow: hidden; }
+  #cta .typed { color: var(--cloud); font-family: var(--mono); font-weight: 700; letter-spacing: 0.02em; }
+  #cta .caret { display: inline-block; width: 4px; height: 44px; margin-left: 4px; vertical-align: -6px; background: var(--prompt); }
+  #cta .send {
+    width: 76px; height: 76px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
+    background: rgba(237, 237, 235, 0.12);
+  }
+  #cta .send svg { width: 36px; height: 36px; }
+  #cta .bubble {
+    position: absolute; left: 50%; display: flex; align-items: center; gap: 16px;
+    padding: 18px 30px 20px 18px; border-radius: 40px; background: var(--cloud); color: var(--core);
+    box-shadow: 0 14px 34px rgba(26, 28, 18, 0.35); opacity: 0; white-space: nowrap;
+  }
+  #cta .bubble .av { width: 52px; height: 52px; font-size: 20px; }
+  #cta .bubble .kw { font-family: var(--mono); font-weight: 700; font-size: 42px; }
+  #cta .heart { position: absolute; right: -14px; top: -14px; width: 50px; height: 50px; opacity: 0; }
+  #cta .reply {
+    position: absolute; left: 150px; right: 150px; display: flex; gap: 18px; align-items: flex-start;
+    padding: 24px 26px; border-radius: 30px; background: rgba(26, 28, 18, 0.86);
+    border: 2px solid rgba(237, 237, 235, 0.14); opacity: 0;
+  }
+  #cta .reply .who { font-family: var(--mono); font-size: 24px; color: rgba(237, 237, 235, 0.6); }
+  #cta .reply .msg { font-size: 40px; font-weight: 700; color: var(--cloud); letter-spacing: -0.02em; opacity: 0; }
+  #cta .reply .dots { font-size: 40px; color: rgba(237, 237, 235, 0.6); letter-spacing: 6px; }
+  #cta .link {
+    display: inline-flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 22px;
+    border-radius: 18px; background: var(--prompt); color: var(--core);
+    font-family: var(--mono); font-weight: 700; font-size: 30px; opacity: 0;
+  }
+</style>
+
+<div id="cta" class="hud"></div>
+
+<script>
+  (function commentCta({ KEYWORD = "EFFECTS", T = 4.6, CPS = 12, T_POST = null,
+                         REPLY = "Sent you the link", LINK = "the effects skill",
+                         NAME = "your_handle", INITIALS = "YOU", AVATAR = null, Y = 1382, RISE = 255 } = {}) {
+    const host = document.getElementById("cta");
+    const av = (cls = "av") => `<span class="${cls}">${AVATAR ? `<img src="${AVATAR}" alt="">` : INITIALS}</span>`;
+    host.innerHTML = `
+      <div class="bar" style="top:${Y - 56}px">${av()}
+        <span class="field"><span class="ph">Add a comment…</span><span class="typed"></span><span class="caret"></span></span>
+        <span class="send"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12L20 4L13 20L11 13L4 12Z" stroke="#ededeb" stroke-width="2" stroke-linejoin="round"/></svg></span>
+      </div>
+      <div class="bubble" style="top:${Y - 56}px">${av()}<span class="kw">${KEYWORD}</span>
+        <svg class="heart" viewBox="0 0 24 24"><path d="M12 21C5 16 2 12.5 2 8.6C2 5.5 4.4 3 7.4 3C9.3 3 11 4 12 5.6C13 4 14.7 3 16.6 3C19.6 3 22 5.5 22 8.6C22 12.5 19 16 12 21Z" fill="#7ba2e0"/></svg>
+      </div>
+      <div class="reply" style="top:${Y - 40}px">${av()}
+        <span><span class="who">${NAME}</span><br><span class="dots">•••</span><span class="msg">${REPLY}</span><br>
+        <span class="link">↗ ${LINK}</span></span>
+      </div>`;
+    const bar = host.querySelector(".bar"), typed = host.querySelector(".typed"), ph = host.querySelector(".ph");
+    const caret = host.querySelector(".caret"), send = host.querySelector(".send");
+    const bubble = host.querySelector(".bubble"), heart = host.querySelector(".heart");
+    const reply = host.querySelector(".reply"), dots = host.querySelector(".dots");
+    const msg = host.querySelector(".msg"), link = host.querySelector(".link");
+
+    const tType = T + 0.35;
+    const tTypedEnd = tType + KEYWORD.length / CPS;
+    const tPost = T_POST ?? tTypedEnd + 0.35;
+    gsap.set(bubble, { xPercent: -50 });
+
+    // bar in
+    gsap.set(bar, { opacity: 0, y: 30 });
+    tl.to(bar, { opacity: 1, y: 0, duration: 0.2, ease: "power3.out" }, T);
+    // typing + caret + send state, as a pure function of time (seek-safe)
+    const clock = { t: 0 };
+    function render(t) {
+      const n = Math.max(0, Math.min(KEYWORD.length, Math.floor((t - tType) * CPS) + 1));
+      const typing = t >= tType;
+      typed.textContent = typing ? KEYWORD.slice(0, n) : "";
+      ph.style.display = typing ? "none" : "inline";
+      const blinkOn = t < tType || t > tTypedEnd ? Math.floor(t * 4) % 2 === 0 : true;   // 2 Hz idle, solid while typing
+      caret.style.opacity = blinkOn ? 1 : 0;
+      send.style.background = typing ? "var(--prompt)" : "rgba(237,237,235,0.12)";
+    }
+    const dur = Number(document.getElementById("root").dataset.duration);
+    render(0);
+    tl.to(clock, { t: dur, duration: dur, ease: "none", onUpdate: () => render(clock.t) }, 0);
+
+    // post: bar drops + fades, bubble rises 255 px
+    tl.to(bar, { opacity: 0, y: 15, duration: 0.15, ease: "power2.in" }, tPost);
+    gsap.set(bubble, { opacity: 0, y: 0 });
+    tl.set(bubble, { opacity: 1 }, tPost);
+    tl.to(bubble, { y: -RISE, duration: 0.2, ease: "power3.out" }, tPost);
+    gsap.set(heart, { opacity: 0, scale: 0.4 });
+    tl.to(heart, { opacity: 1, scale: 1, duration: 0.18, ease: "back.out(2.2)" }, tPost + 0.13);
+    // reply: card +0.20 with dots, message +0.25 replaces dots, link pill +0.5
+    gsap.set(reply, { opacity: 0, x: -40 });
+    tl.to(reply, { opacity: 1, x: 0, duration: 0.2, ease: "power3.out" }, tPost + 0.2);
+    tl.set(dots, { display: "none" }, tPost + 0.45);
+    gsap.set(msg, { opacity: 0, display: "none" });
+    tl.set(msg, { display: "inline", opacity: 1 }, tPost + 0.45);
+    gsap.set(link, { opacity: 0, y: 12 });
+    tl.to(link, { opacity: 1, y: 0, duration: 0.18, ease: "back.out(1.8)" }, tPost + 0.7);
+  })();
+</script>

@@ -1,0 +1,90 @@
+<!-- 14 · doodle boil — the room dims, a wobbly chalk line traces around the person ~16 px outside
+     their silhouette, and doodles draw themselves on beside the head. Only the drawn layer
+     "boils" (re-wobbles every 2nd frame = 15 fps); the footage stays 30 fps.
+     Pair with 00-room-dim (amount 0.5), as measured on reference reels.
+     ✅ rendered 16 Oct 2026.
+     How: a SECOND copy of fg.webm runs through an SVG filter — blur the alpha, threshold it
+     at two levels, subtract → a ring that hugs them at any pose; feTurbulence displaces it
+     and its seed steps at 15 fps from timeline time, so it is seek-safe.
+     Params: T, DUR, OUTER/INNER (threshold levels; lower = further out), WOBBLE (px),
+     BOIL_FPS, INK, DOODLES [{ shape: "sparkle"|"heart"|"star"|"arrow", x, y, size, t, color }]. -->
+
+<style>
+  #boil-line { z-index: 1; opacity: 0; filter: url(#boil-ring); }
+  #boil-doodles { position: absolute; inset: 0; z-index: 3; opacity: 0; filter: url(#boil-wobble); }
+  #boil-doodles path { fill: none; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="boil-ring" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="soft" />
+      <feComponentTransfer in="soft" result="outer"><feFuncA id="boil-outer" type="linear" slope="40" intercept="-2" /></feComponentTransfer>
+      <feComponentTransfer in="soft" result="inner"><feFuncA id="boil-inner" type="linear" slope="40" intercept="-6" /></feComponentTransfer>
+      <feComposite in="outer" in2="inner" operator="out" result="ring" />
+      <feTurbulence id="boil-turb" type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="1" result="noise" />
+      <feDisplacementMap in="ring" in2="noise" id="boil-disp" scale="12" xChannelSelector="R" yChannelSelector="G" result="wob" />
+      <feFlood id="boil-ink" flood-color="#ededeb" />
+      <feComposite in2="wob" operator="in" />
+    </filter>
+    <filter id="boil-wobble" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence id="boil-turb2" type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="1" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
+</svg>
+
+<video id="boil-line" class="plane clip" src="fg.webm" playsinline muted
+  data-start="0" data-duration="__DUR__" data-track-index="2"></video>
+
+<svg id="boil-doodles" class="front" viewBox="0 0 1080 1920" preserveAspectRatio="none"></svg>
+
+<script>
+  (function doodleBoil({ T = 1, DUR = 1.4, OUTER = 0.05, INNER = 0.15, WOBBLE = 12, BOIL_FPS = 15,
+                         INK = "#ededeb",
+                         DOODLES = [{ shape: "sparkle", x: 860, y: 520, size: 120, t: 0.15, color: "#7ba2e0" },
+                                    { shape: "heart", x: 210, y: 700, size: 130, t: 0.35, color: "#ededeb" }] } = {}) {
+    const SLOPE = 40;                                   // sharp threshold: A' = 40·(A − level)
+    document.getElementById("boil-outer").setAttribute("intercept", (-SLOPE * OUTER).toFixed(2));
+    document.getElementById("boil-inner").setAttribute("intercept", (-SLOPE * INNER).toFixed(2));
+    document.getElementById("boil-disp").setAttribute("scale", WOBBLE);
+    document.getElementById("boil-ink").setAttribute("flood-color", INK);
+    const SHAPES = {                                    // unit paths, centred on 0,0, size 1
+      sparkle: "M0,-0.5 C0.05,-0.1 0.1,-0.05 0.5,0 C0.1,0.05 0.05,0.1 0,0.5 C-0.05,0.1 -0.1,0.05 -0.5,0 C-0.1,-0.05 -0.05,-0.1 0,-0.5 Z",
+      heart: "M0,0.42 C-0.55,0.05 -0.5,-0.42 -0.2,-0.42 C-0.05,-0.42 0,-0.3 0,-0.22 C0,-0.3 0.05,-0.42 0.2,-0.42 C0.5,-0.42 0.55,0.05 0,0.42 Z",
+      star: "M0,-0.5 L0.12,-0.15 L0.48,-0.15 L0.19,0.07 L0.3,0.42 L0,0.2 L-0.3,0.42 L-0.19,0.07 L-0.48,-0.15 L-0.12,-0.15 Z",
+      arrow: "M-0.5,0.3 C-0.2,-0.1 0.1,-0.2 0.45,-0.25 M0.25,-0.42 L0.45,-0.25 L0.28,-0.05",
+    };
+    const svg = document.getElementById("boil-doodles");
+    const paths = DOODLES.map((d) => {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", SHAPES[d.shape]);
+      p.setAttribute("transform", `translate(${d.x} ${d.y}) scale(${d.size})`);
+      p.setAttribute("stroke", d.color);
+      p.setAttribute("vector-effect", "non-scaling-stroke");
+      p.setAttribute("pathLength", "1");
+      p.setAttribute("stroke-dasharray", "1");
+      p.setAttribute("stroke-dashoffset", "1");
+      svg.appendChild(p);
+      return { el: p, t: d.t };
+    });
+    const turb = document.getElementById("boil-turb"), turb2 = document.getElementById("boil-turb2");
+    const clock = { t: 0 };
+    function render(t) {                                // pure function of time → seek-safe
+      const k = Math.floor(t * BOIL_FPS);               // the boil steps, the footage doesn't
+      turb.setAttribute("seed", String(1 + (k % 97)));
+      turb2.setAttribute("seed", String(7 + (k % 89)));
+      const local = t - T;
+      const on = local >= 0 && local < DUR;
+      document.getElementById("boil-line").style.opacity = on ? 1 : 0;
+      svg.style.opacity = on ? 1 : 0;
+      paths.forEach((p) => {                            // write-on over 5 frames, stepped
+        const q = Math.max(0, Math.min(1, (Math.floor((local - p.t) * BOIL_FPS) / BOIL_FPS) / (5 / 30)));
+        p.el.setAttribute("stroke-dashoffset", (1 - q).toFixed(3));
+      });
+    }
+    const dur = Number(document.getElementById("root").dataset.duration);
+    render(0);
+    tl.to(clock, { t: dur, duration: dur, ease: "none", onUpdate: () => render(clock.t) }, 0);
+  })();
+</script>

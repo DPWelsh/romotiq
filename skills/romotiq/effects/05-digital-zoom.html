@@ -1,0 +1,26 @@
+<!-- 05 · digital zoom — creep, PUNCH on the emphasis word, creep, SNAP back out.
+     ✅ rendered 16 Oct 2026. Measured on a reference reel:
+       push 1.00→1.30 over 0.6 s ease-in-out · punch 1.30→1.65 in 3 frames + 1–2 frames blur
+       · creep 1.65→1.95 (~0.11×/s) · snap-out to 1.00 in 5 frames with heavy blur.
+     It scales #cam, so plate, cut-out and in-world graphics zoom together (no ghosting).
+     On a CLOSE take (face already ~30% of the frame) halve these numbers: punch to ~1.3.
+     Params: T_PUSH, T_PUNCH (lead the word by ~0.15 s), T_OUT, PUSH, PUNCH, CREEP_TO, ORIGIN
+     (aim at the face: subject.json head_cx, head_top + 250). Set T_PUSH = null to skip the push. -->
+
+<script>
+  (function digitalZoom({ T_PUSH = null, T_PUNCH = 5.85, T_OUT = 7.7,
+                          PUSH = 1.0, PUNCH = 1.3, CREEP_TO = 1.4, ORIGIN = "50% 46%" } = {}) {
+    const F = 1 / 30;
+    tl.set("#cam", { transformOrigin: ORIGIN }, Math.max(0, (T_PUSH ?? T_PUNCH) - 0.01));
+    if (T_PUSH != null) tl.to("#cam", { scale: PUSH, duration: 0.6, ease: "power1.inOut" }, T_PUSH);
+    tl.to("#cam", { scale: PUNCH, duration: 3 * F, ease: "power3.out" }, T_PUNCH);
+    tl.to("#cam", { filter: "blur(4px)", duration: F, ease: "none" }, T_PUNCH);             // the smear
+    tl.to("#cam", { filter: "blur(0px)", duration: 2 * F, ease: "none" }, T_PUNCH + F);
+    tl.to("#cam", { scale: CREEP_TO, duration: T_OUT - T_PUNCH - 3 * F, ease: "none" }, T_PUNCH + 3 * F);
+    if (T_OUT != null) {
+      tl.to("#cam", { scale: 1, duration: 5 * F, ease: "power2.inOut" }, T_OUT);
+      tl.to("#cam", { filter: "blur(10px)", duration: 2.5 * F, ease: "power1.in" }, T_OUT);
+      tl.to("#cam", { filter: "blur(0px)", duration: 2.5 * F, ease: "power1.out" }, T_OUT + 2.5 * F);
+    }
+  })();
+</script>

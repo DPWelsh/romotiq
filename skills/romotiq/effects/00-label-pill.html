@@ -1,0 +1,38 @@
+<!-- 00 · label pill — names the effect or section, top-centre above the head.
+     Measured on reference reels: white box r≈15, black bold Title Case ≈48 px, top y≈234, pops in 4 frames after
+     the cut (50% opacity + scale .92 on frame 1, full on frame 2), no exit, one per section.
+     Theme: light box, dark display-900 tracked −0.025em, the number in the mono face.
+     ✅ rendered 16 Oct 2026.
+     Params: ITEMS [{ t, until, num, text }] — num is optional ("#3", "05/17"); TOP px. -->
+
+<style>
+  #pills { position: absolute; left: 0; right: 0; top: 0; z-index: 21; }
+  .pill {
+    position: absolute; left: 50%; display: flex; align-items: baseline; gap: 14px;
+    padding: 18px 30px 20px; border-radius: 16px; background: var(--cloud);
+    color: var(--core); white-space: nowrap; opacity: 0;
+    box-shadow: 0 6px 22px rgba(26, 28, 18, 0.18);
+  }
+  .pill .pn { font-family: var(--mono); font-weight: 700; font-size: 34px; color: var(--indigo); }
+  .pill .pt { font-family: var(--display); font-weight: 900; font-size: 46px; letter-spacing: -0.025em; }
+</style>
+
+<div id="pills" class="hud"></div>
+
+<script>
+  (function labelPills({ ITEMS = [], TOP = 230 } = {}) {
+    const host = document.getElementById("pills");
+    const F = 1 / 30;
+    ITEMS.forEach((it) => {
+      const p = document.createElement("div");
+      p.className = "pill";
+      p.style.top = TOP + "px";
+      p.innerHTML = (it.num ? `<span class="pn">${it.num}</span>` : "") + `<span class="pt">${it.text}</span>`;
+      host.appendChild(p);
+      gsap.set(p, { xPercent: -50, opacity: 0, scale: 0.92 });
+      tl.set(p, { opacity: 0.5, scale: 0.92 }, it.t);
+      tl.set(p, { opacity: 1, scale: 1 }, it.t + F);
+      tl.set(p, { opacity: 0 }, it.until);                 // no exit animation: hard off
+    });
+  })();
+</script>

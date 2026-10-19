@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>romotiq</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* ── fonts: brand.json, written by assemble ── */
+      /* ── theme: brand.json, written by assemble ── */
+      body { margin: 0; background: var(--core); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+      /* The punch. Punch-ins at the cuts scale #punch, so they stack with the digital zoom on #cam. */
+      #punch { position: absolute; inset: 0; transform-origin: 50% 40%; }
+      /* The camera. Plate, cut-out and in-world graphics live inside it, so a
+         zoom/vertigo/pull-back moves the room and the person together. */
+      #cam { position: absolute; inset: 0; transform-origin: 50% 46%; }
+      .plane { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      #plate { z-index: 0; }
+      #fg { z-index: 2; }
+
+      /* The depth sandwich. Inside #cam: .behind (z1) sits under the cut-out,
+         .front (z3) over it. Outside #cam: screen-space UI that ignores the camera. */
+      .behind { position: absolute; z-index: 1; }
+      .front { position: absolute; z-index: 3; }
+      .hud { position: absolute; z-index: 10; }
+
+      /* ── effect styles go here ── */
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="__DUR__">
+      <div id="punch">
+        <div id="cam">
+          <video id="plate" class="plane clip" src="take.mp4" playsinline data-has-audio="true"
+            data-start="0" data-duration="__DUR__" data-track-index="0" data-volume="1"></video>
+
+          <!-- ── behind-layer effect markup goes here (class="behind") ── -->
+
+          <video id="fg" class="plane clip" src="fg.webm" playsinline muted
+            data-start="0" data-duration="__DUR__" data-track-index="1"></video>
+
+          <!-- ── front-layer effect markup goes here (class="front") ── -->
+        </div>
+      </div>
+
+      <!-- ── screen-space UI (class="hud"): captions, label pills, CTA ── -->
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.set("#cam", { scale: 1, x: 0, y: 0, rotation: 0 }, 0);
+      tl.set("#punch", { scale: 1 }, 0);
+
+      // ── effect timelines go here. Start each on a word from words.json. ──
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

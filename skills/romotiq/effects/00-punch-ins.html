@@ -1,0 +1,12 @@
+<!-- 00 · punch-ins — a jump cut reads as a camera change, not a skip: the frame alternates between two scales at the
+     cuts, hard (no tween), with the scale aimed at the face. Where a stretch runs 10 s without a cut, it punches on a
+     sentence start. `romotiq effects --init` writes the STEPS from cuts.json and subject.json.
+     It scales #punch (around #cam), so it stacks with 05-digital-zoom instead of fighting it.
+     Params: STEPS [[t, scale], …] (t on a cut, frame-exact), ORIGIN ("x% y%", the face). -->
+
+<script>
+  (function punchIns({ STEPS = [], ORIGIN = "50% 40%" } = {}) {
+    tl.set("#punch", { scale: 1, transformOrigin: ORIGIN }, 0);
+    for (const [t, s] of STEPS) tl.set("#punch", { scale: s }, t);
+  })();
+</script>

@@ -1,0 +1,93 @@
+<!-- 00 · captions — word-by-word, 1–3 words a chunk, each word blurs in over 3 frames.
+     Measured on reference reels, rebuilt in the theme: display face tracked tight,
+     lowercase, light ink with a dark halo. Emphasis is WEIGHT, not colour: normal words in
+     display-700, the payload word in display-900 at 1.12×.
+     ✅ rendered 16 Oct 2026.
+     Params: WORDS (assemble.mjs inlines "@transcript.json"), ACCENT (words to set heavy,
+     lowercase), Y (caption centre px: 55–65% of height, never below 1440 = IG UI zone;
+     default 1150 for a wide take, ~1290 on a close take so it clears the chin), LEAD (s the word shows before it's said, measured ~0.1), SIZE, MAX_WORDS, MAX_CHARS,
+     GAP (a pause longer than this starts a new chunk), HIDE [[from,to],…] (windows with no
+     captions, e.g. during a full-frame title or the CTA), BREAKS [t, …] (the cuts: a chunk never runs across one;
+     `romotiq effects --init` fills it from cuts.json). -->
+
+<style>
+  #caps { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 20; }
+  .cap-chunk {
+    position: absolute; left: 60px; right: 60px; top: 0;
+    display: flex; justify-content: center; align-items: baseline; gap: 0.24em;
+    font-family: var(--display); font-weight: 700; letter-spacing: -0.035em;
+    color: var(--cloud); white-space: nowrap;
+    /* halo, not just a shadow: Cloud words must survive passing over Cloud cards */
+    text-shadow: 0 0 2px rgba(26, 28, 18, 0.9), 0 0 6px rgba(26, 28, 18, 0.6), 0 2px 14px rgba(26, 28, 18, 0.55);
+    opacity: 0;
+  }
+  .cap-word { display: inline-block; transform-origin: 50% 70%; }
+  .cap-word.accent { font-weight: 900; font-size: 1.12em; }
+</style>
+
+<div id="caps" class="hud"></div>
+
+<script>
+  (function captions({ WORDS = [], ACCENT = [], Y = 1150, LEAD = 0.1, SIZE = 76, MAX_WORDS = 3,
+                       MAX_CHARS = 20, GAP = 0.28, HIDE = [], BREAKS = [], LOWER = true } = {}) {
+    const host = document.getElementById("caps");
+    const accent = new Set(ACCENT.map((w) => w.toLowerCase()));
+    const clean = (w) => w.toLowerCase().replace(/[^\p{L}\p{N}'$%]/gu, "");
+    // chunk: ≤ MAX_WORDS, ≤ MAX_CHARS, break after punctuation or a pause
+    const chunks = [];
+    let cur = [];
+    WORDS.forEach((w, i) => {
+      const text = LOWER ? w.text.toLowerCase().replace(/[.,!?;:]+$/, "") : w.text;
+      const len = cur.reduce((n, x) => n + x.text.length + 1, 0) + text.length;
+      const cutBetween = i > 0 && BREAKS.some((b) => WORDS[i - 1].start < b && w.start >= b - 0.02);
+      if (cur.length && (cur.length >= MAX_WORDS || len > MAX_CHARS || w.start - WORDS[i - 1].end > GAP || cutBetween)) {
+        chunks.push(cur); cur = [];
+      }
+      cur.push({ ...w, text, accent: accent.has(clean(w.text)) });
+      if (/[.,!?;:]$/.test(w.text)) { chunks.push(cur); cur = []; }
+    });
+    if (cur.length) chunks.push(cur);
+    // a chunk shows LEAD before its first word, but never before a cut it follows (it would sit on the last shot)
+    chunks.forEach((ch) => {
+      const b = BREAKS.filter((x) => x <= ch[0].start + 0.02 && x > ch[0].start - LEAD).pop();
+      ch.from = b !== undefined ? b : ch[0].start - LEAD;
+    });
+    // DOM: one row per chunk, laid out whole so earlier words never shift
+    const rows = chunks.map((ch) => {
+      const row = document.createElement("div");
+      row.className = "cap-chunk";
+      row.style.top = Y - SIZE * 0.6 + "px";
+      row.style.fontSize = SIZE + "px";
+      ch.forEach((w) => {
+        const s = document.createElement("span");
+        s.className = "cap-word" + (w.accent ? " accent" : "");
+        s.textContent = w.text;
+        row.appendChild(s);
+        w.el = s;
+      });
+      host.appendChild(row);
+      return row;
+    });
+    const F = 1 / 30;
+    const hidden = (t) => HIDE.some(([a, b]) => t >= a && t < b);
+    function render(t) {                                // pure function of time → seek-safe
+      let active = -1;
+      chunks.forEach((ch, i) => { if (t >= ch.from) active = i; });
+      rows.forEach((row, i) => {
+        const on = i === active && !hidden(t) && t < chunks[i].at(-1).end + 0.6;
+        row.style.opacity = on ? 1 : 0;
+        if (!on) return;
+        chunks[i].forEach((w) => {
+          const p = Math.max(0, Math.min(1, (t - Math.max(w.start - LEAD, chunks[i].from)) / (3 * F)));
+          w.el.style.opacity = p === 0 ? 0 : 0.4 + 0.6 * p;
+          w.el.style.filter = `blur(${(12 * (1 - p)).toFixed(2)}px)`;
+          w.el.style.transform = `scale(${(1 + 0.05 * (1 - p)).toFixed(4)})`;
+        });
+      });
+    }
+    const clock = { t: 0 };
+    const dur = Number(document.getElementById("root").dataset.duration);
+    render(0);
+    tl.to(clock, { t: dur, duration: dur, ease: "none", onUpdate: () => render(clock.t) }, 0);
+  })();
+</script>

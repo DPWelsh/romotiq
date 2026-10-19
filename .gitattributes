@@ -1,0 +1,3 @@
+# Line endings stay LF on Windows checkouts too (the effects and the skill are read by regex); the cut-out tool is binary
+* text=auto eol=lf
+skills/romotiq/native/matte binary

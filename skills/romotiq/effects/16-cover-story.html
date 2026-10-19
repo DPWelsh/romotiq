@@ -1,0 +1,37 @@
+<!-- 16 · cover story — a masthead word BEHIND the head. ✅ rendered 16 Oct 2026.
+     Params: WORD, T (lead the spoken word by ~0.15–0.3 s), HOLD (s), TOP (px: the letters
+     should straddle subject.json head_top so their hair cuts the bottom third of them),
+     INK (Core on a light wall, Cloud on a dark one).
+     Fits the word to 1000 px wide (7 letters at a fixed 300 px overflowed the frame). -->
+
+<style>
+  #cover { position: absolute; left: 0; right: 0; top: 470px; display: flex; justify-content: center; }
+  #cover-word {
+    display: block; font-family: var(--display); font-weight: 900;
+    font-size: 300px; line-height: 0.86; letter-spacing: -0.045em;
+    color: var(--core); white-space: nowrap;
+  }
+</style>
+
+<div id="cover" class="behind"><span id="cover-word"></span></div>
+
+<script>
+  (function coverStory({ WORD = "WOOLIES", T = 0.25, HOLD = 2.2, TOP = 470, INK = "var(--core)" } = {}) {
+    const el = document.getElementById("cover-word");
+    el.textContent = WORD;
+    el.style.color = INK;
+    document.getElementById("cover").style.top = TOP + "px";
+    function fit() {
+      const f = window.__hyperframes?.fitTextFontSize
+        ? window.__hyperframes.fitTextFontSize(WORD, { maxWidth: 1000, baseFontSize: 340, minFontSize: 120, step: 4, fontFamily: "Display", fontWeight: 900 })
+        : { fontSize: Math.min(340, Math.floor(1000 / (WORD.length * 0.56))) };
+      el.style.fontSize = f.fontSize + "px";
+    }
+    fit();
+    document.fonts?.ready.then(fit);
+    gsap.set(el, { opacity: 0, y: 90 });
+    tl.to(el, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, T);
+    tl.to(el, { scale: 1.05, duration: HOLD - 0.25, ease: "none" }, T + 0.45);
+    tl.to(el, { opacity: 0, y: -40, duration: 0.3, ease: "power2.in" }, T + HOLD);
+  })();
+</script>

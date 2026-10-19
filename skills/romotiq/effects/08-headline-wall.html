@@ -1,0 +1,44 @@
+<!-- 08 · headline wall — receipt cards slam onto the wall BEHIND the person while the room dims.
+     Measured: ~10 clippings/screens land in 0.5 s, each a 3-frame slam (scale 1.4→1, rot ±6°),
+     hold, hard cut; the room drops 45–56% (pair with 00-room-dim). Variant B hangs the
+     cards behind the head so the head occludes the inner edges — that's the depth tell.
+     Built for CLOSE takes where an orbit can't pass in front without crossing the face:
+     cards sit in the side columns beside the head. ✅ rendered 16 Oct 2026.
+     RULE: real numbers only, each with a source line.
+     Params: ITEMS [{ t, num, lab, src, x, y, rot }] (x/y = card top-left px; t = slam time, lead the
+     word by ~0.15 s), UNTIL (s, hard cut), W (card width px). -->
+
+<style>
+  #hwall { position: absolute; inset: 0; }
+  .hw-card {
+    position: absolute; box-sizing: border-box; padding: 20px 20px 18px; border-radius: 22px;
+    background: var(--cloud); color: var(--core); opacity: 0;
+    box-shadow: 0 18px 40px rgba(26, 28, 18, 0.38);
+  }
+  .hw-card .num { display: block; font-family: var(--mono); font-weight: 700; font-size: 58px; letter-spacing: -0.02em; line-height: 1; }
+  .hw-card .lab { display: block; margin-top: 10px; font-family: var(--display); font-weight: 700; font-size: 27px; line-height: 1.05; letter-spacing: -0.02em; }
+  .hw-card .src { display: block; margin-top: 12px; font-family: var(--mono); font-size: 17px; color: rgba(26, 28, 18, 0.55); }
+</style>
+
+<div id="hwall" class="behind"></div>
+
+<script>
+  (function headlineWall({ ITEMS = [], UNTIL = 7.3, W = 236 } = {}) {
+    const host = document.getElementById("hwall");
+    const F = 1 / 30;
+    ITEMS.forEach((it, i) => {
+      const c = document.createElement("div");
+      c.className = "hw-card";
+      c.style.left = it.x + "px";
+      c.style.top = it.y + "px";
+      c.style.width = W + "px";
+      c.innerHTML = `<span class="num">${it.num}</span><span class="lab">${it.lab}</span>` + (it.src ? `<span class="src">${it.src}</span>` : "");
+      host.appendChild(c);
+      const rot = it.rot ?? [-5, 4, -3, 6, -4, 3][i % 6];          // fixed list, never Math.random
+      gsap.set(c, { opacity: 0, scale: 1.4, rotation: rot * 2 });
+      tl.set(c, { opacity: 1 }, it.t);
+      tl.to(c, { scale: 1, rotation: rot, duration: 3 * F, ease: "power3.out" }, it.t);
+      tl.set(c, { opacity: 0 }, UNTIL);                               // hard cut out
+    });
+  })();
+</script>
